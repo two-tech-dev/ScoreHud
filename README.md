@@ -1,114 +1,170 @@
-# Endstone C++ Example Plugin
+# ScoreHud
 
-[![Build](https://github.com/EndstoneMC/cpp-example-plugin/actions/workflows/build.yml/badge.svg)](https://github.com/EndstoneMC/cpp-example-plugin/actions/workflows/build.yml)
+ScoreHud is an Endstone C++ plugin that displays a configurable sidebar scoreboard for Minecraft Bedrock Dedicated Server.
 
-A starter template for building [Endstone](https://github.com/EndstoneMC/endstone) plugins in C++.
-Endstone is a plugin framework for Minecraft Bedrock Dedicated Server, similar to
-Bukkit/Spigot/Paper for Java Edition. This template demonstrates commands, events,
-and permissions.
+This project is an Endstone port of ScoreHud maintained by TwoTech. It targets the current Endstone world model and uses one global scoreboard layout from `default-board`.
 
-## Use This Template
+## Features
 
-1. Click **Use this template** on GitHub (or fork/clone it)
-2. Rename the following to match your plugin:
+- Configurable sidebar title and lines
+- Optional flickering titles
+- Built-in player and server tags
+- Runtime tag refresh for TPS, tick usage, time, date, ping, health, item, position, and online count
+- `/scorehud` and `/sh` command support
+- Per-player HUD toggle with `/scorehud on` and `/scorehud off`
+- Generated default `config.yml` and `scorehud.yml`
 
-| What | Where | Example |
-|------|-------|---------|
-| Project name | `CMakeLists.txt` `project(...)` | `project(my_plugin VERSION 0.1.0 LANGUAGES CXX)` |
-| Plugin version | `CMakeLists.txt` `project(... VERSION ...)` | `0.1.0` |
-| Plugin metadata | `src/plugin.cpp` `ENDSTONE_PLUGIN(...)` | `"my_plugin", MY_PLUGIN_VERSION, MyPlugin` |
-| Plugin class | `include/plugin.h` class name | `MyPlugin` |
-| Prefix | `src/plugin.cpp` `prefix = ...` | `"MyPlugin"` |
-| Permission prefix | `src/plugin.cpp` permission names | `my_plugin.command.*` |
+## Not Supported
 
-3. Update `ENDSTONE_API_VERSION` in `CMakeLists.txt` to the Endstone version you target
-4. Delete the example command/listener code and start building
+Endstone does not currently expose PocketMine-style multiworld support. ScoreHud does not implement per-world boards, disabled worlds, or `scoreboards:` sections. Use `default-board` for every player.
 
-## Development
+## Requirements
 
-### Prerequisites
+- Endstone `0.11`
+- CMake `3.15+`
+- C++20 compiler
+- Linux: Clang with libc++
+- Windows: Visual Studio with Desktop development with C++
 
-**Windows:** [Visual Studio](https://visualstudio.microsoft.com/) 2019 or newer with the
-"Desktop development with C++" workload. CMake is included with Visual Studio, or install it
-separately from [cmake.org](https://cmake.org/download/).
-
-**Linux:** Clang 15+ with libc++. Install via [apt.llvm.org](https://apt.llvm.org/):
+## Build
 
 ```bash
-# Install CMake and Ninja
-sudo apt-get install -y cmake ninja-build
-
-# Install LLVM/Clang (replace 18 with desired version)
-wget https://apt.llvm.org/llvm.sh
-chmod +x llvm.sh
-sudo ./llvm.sh 18
-sudo apt-get install -y libc++-18-dev libc++abi-18-dev
-```
-
-### Building
-
-```bash
-git clone https://github.com/EndstoneMC/cpp-example-plugin.git
-cd cpp-example-plugin
-```
-
-**Windows:**
-```bash
-cmake -B build
-cmake --build build --config Release
-```
-
-**Linux:**
-```bash
-CC=clang-18 CXX=clang++-18 cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-## Project Structure
+Linux builds should use Clang:
 
-```
-include/
-  plugin.h       Plugin lifecycle, commands
-  listener.h     Event listener (player join/quit)
-src/
-  plugin.cpp     Plugin metadata, command and permission declarations
+```bash
+CC=clang CXX=clang++ cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 ```
 
-## Install on a Server
+The plugin binary is written to the build directory:
 
-After building, copy the output binary to your server's `plugins/` folder:
-- **Windows:** `build/Release/endstone_cpp_example.dll`
-- **Linux:** `build/endstone_cpp_example.so`
+- Linux: `build/endstone_scorehud.so`
+- Windows: `build/Release/endstone_scorehud.dll`
 
-Restart the server to load the plugin.
+## Install
 
-## Releasing
+1. Build or download the ScoreHud binary for your server platform.
+2. Copy the binary into the server `plugins/` folder.
+3. Start the server.
+4. Edit the generated files in the ScoreHud data folder:
+   - `config.yml`
+   - `scorehud.yml`
+5. Restart the server after changing configuration.
 
-This template includes a GitHub Actions release workflow. To make a release:
+## Commands
 
-1. Add your changes under `## [Unreleased]` in `CHANGELOG.md`
-2. Go to **Actions > Release > Run workflow**
-3. Enter the version (e.g. `0.1.0`) and run
+| Command | Description |
+| --- | --- |
+| `/scorehud` | Show command usage |
+| `/scorehud on` | Enable the sidebar for yourself |
+| `/scorehud off` | Disable the sidebar for yourself |
+| `/scorehud about` | Show plugin information |
+| `/scorehud help` | Show command usage |
+| `/sh` | Alias for `/scorehud` |
 
-The workflow validates the version, updates the changelog, creates a git tag and GitHub release,
-builds for both Windows and Linux, and attaches the binaries to the release.
+Permission:
 
-Use **dry run** to preview without making changes.
+```text
+sh.command.sh
+```
 
-## Troubleshooting
+Default: everyone.
 
-**`GLIBC_2.xx not found` when loading the plugin on Linux**
+## Configuration
 
-Plugins are linked against glibc at build time and require the same or newer version at
-runtime. A plugin built on Ubuntu 24.04 will not load on a server running Ubuntu 22.04.
+`scorehud.yml` controls the sidebar title and lines.
 
-To maximize compatibility, build on an older OS. GitHub Actions runners (Ubuntu 22.04)
-are a good default for this reason.
+```yaml
+titles:
+  flicker: false
+  period: 5
+  title: "§l§aServer §dName"
+  lines:
+  - "§l§aServer §dName"
+  - "§l§bServer §cName"
+
+default-board:
+- ""
+- "§dName: §5{scorehud.name}"
+- ""
+- "§bOnline: §a{scorehud.online} §c/ §d{scorehud.max_online}"
+- ""
+- "§dTPS: §5{scorehud.tps}"
+- "§bLoad: §a{scorehud.load}"
+```
+
+`config.yml` controls refresh behavior and formatting.
+
+```yaml
+tag-factory:
+  enable: true
+  update-period: 5
+  enable-memory-tags: false
+
+time:
+  zone: false
+  format:
+    time: "H:i:s"
+    date: "d-m-Y"
+```
+
+## Built-In Tags
+
+Common tags:
+
+```text
+{scorehud.name}
+{scorehud.online}
+{scorehud.max_online}
+{scorehud.tps}
+{scorehud.load}
+{scorehud.time}
+{scorehud.date}
+{scorehud.x}
+{scorehud.y}
+{scorehud.z}
+{scorehud.health}
+{scorehud.max_health}
+{scorehud.ping}
+{scorehud.item_name}
+{scorehud.item_count}
+{scorehud.world_name}
+{scorehud.gamemode}
+```
+
+Unknown tags render as empty text.
 
 ## Documentation
 
-For more on the Endstone API, see the [documentation](https://endstone.dev/latest/).
+Wiki-style documentation is available in [`docs/wiki`](docs/wiki/Home.md).
+
+## Project Layout
+
+```text
+include/
+  plugin.h
+  listener.h
+  scorehud/
+    score_tag.h
+    scoreboard_view.h
+    session_manager.h
+    settings.h
+    tag_resolver.h
+src/
+  plugin.cpp
+  listener.cpp
+  scorehud/
+    score_tag.cpp
+    scoreboard_view.cpp
+    session_manager.cpp
+    settings.cpp
+    tag_resolver.cpp
+```
 
 ## License
 
-[MIT License](LICENSE)
+See [`LICENSE`](LICENSE).
